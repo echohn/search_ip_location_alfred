@@ -4,35 +4,11 @@
 require 'uri'
 require 'net/http'
 
-args = "{query}"
+load 'alfred_feedback.rb'
 
-def output(title,response)
-  ops = []
-  i = 0
-  response.each do |res|
+query = Alfred.query
 
-    op = <<-EOF.gsub(/^\s+\|/,'')
-      |        <item uid="#{i}" arg="#{title}&#10;#{res}" valid="YES" type="default">
-      |            <title>#{title}</title>
-      |            <subtitle>#{res}</subtitle>
-      |            <icon>icon.png</icon>
-      |        </item>
-
-      EOF
-    ops << op
-    i += 1
-  end
-  op_header = <<-EOF.gsub(/^\s+\|/,'')
-      |<?xml version="1.0"?>
-      |    <items>
-      EOF
-
-  op_tail = <<-EOF.gsub(/^\s+\|/,'')
-      |    </items>
-      EOF
-
-  op_header + ops.join + op_tail
-end
+feedback = Feedback.new
 
 def query_ip(args)
   api = "http://www.ip138.com/ips138.asp?ip=#{args}"
@@ -47,14 +23,32 @@ def query_ip(args)
     ['查询失败',['地址不正确或不存在。']]
   end
 end
+
 def query_no_arg
   api = "http://1111.ip138.com/ic.asp"
   response = Net::HTTP.get_response(URI(api)).body.encode('utf-8','gb2312')
-  return [$1] if response.lines.last.match(/<center>(.*)<\/center>/)
+  return $1 if response.lines.last.match(/<center>(.*)<\/center>/)
 end
 
-if args == ''
-  puts output('我的 IP',query_no_arg)
+case query
+
+when ''
+  feedback.add_item({
+    :title => '我的 IP 地址',
+    :subtitle => query_no_arg
+  })
+
+  puts feedback.to_xml
+
 else
-  puts output(*query_ip(args))
+  title,items = query_ip(query)
+  items.each.each do |item|
+    feedback.add_item({
+      :title  => title,
+      :subtitle => item
+    })
+  end
+
+  puts feedback.to_xml
 end
+
