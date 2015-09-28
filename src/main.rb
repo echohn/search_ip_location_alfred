@@ -35,7 +35,8 @@ case query
 when ''
   feedback.add_item({
     :title => '我的 IP 地址',
-    :subtitle => query_no_arg
+    :subtitle => query_no_arg,
+    :arg => query_no_arg
   })
 
   puts feedback.to_xml
@@ -45,7 +46,8 @@ else
   items.each.each do |item|
     feedback.add_item({
       :title  => title,
-      :subtitle => item
+      :subtitle => item,
+      :arg => item
     })
   end
 
